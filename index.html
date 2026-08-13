@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<!--
+	APM Dashboard — Analytics charts showcase (mock data, standalone).
+	Loads the real Bank of Georgia design system from the CDN via an inline import map,
+	exactly like the app does, so the bd-* components render identically. All chart data is
+	mocked in showcase.js — no backend, no login, no build step.
+
+	HOW TO RUN: this uses ES modules + an import map, so it must be served over HTTP
+	(file:// is blocked by the browser). From this folder:
+	    npx serve .        (or)   python3 -m http.server 8090
+	then open the printed URL. See README.md.
+-->
+<html lang="en" class="business">
+	<head>
+		<meta charset="UTF-8" />
+		<meta content="width=device-width,minimum-scale=1,initial-scale=1" name="viewport" />
+		<title>Analytics charts — showcase</title>
+
+		<!-- Preconnect + design-system design tokens / theme / BOG font (same sheets the app loads) -->
+		<link rel="preconnect" href="https://webstatic.bog.ge" />
+		<link rel="stylesheet" href="https://webstatic.bog.ge/cdn/@bog-design-system/assets/0.24.0/style.css" />
+		<link rel="stylesheet" href="https://webstatic.bog.ge/cdn/@bog-design-system/assets/0.24.0/v2.css" />
+
+		<style>
+			html,
+			body {
+				margin: 0;
+				background-color: var(--background-body, #f4f4f5);
+				color: var(--text-primary, #111);
+				font-family: 'BOG', sans-serif;
+			}
+
+			.page {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: var(--space-24, 24px);
+				box-sizing: border-box;
+			}
+		</style>
+
+		<!--
+			Design-system import map, injected verbatim from frontend/src/import-map/import-map.json
+			(kept complete so every transitive bd-* / lit specifier resolves without hunting deps).
+		-->
+		<script type="importmap">
+			{
+				"imports": {
+					"lit": "https://webstatic.bog.ge/@vendor/lit/3.1.0/index.js",
+					"lit/": "https://webstatic.bog.ge/@vendor/lit/3.1.0/",
+					"lit-element": "https://webstatic.bog.ge/@vendor/lit/3.1.0/index.js",
+					"lit-html": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/html.js",
+					"lit-html/directives/": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/",
+					"lit-html/directives/live": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/live.js",
+					"lit-html/directives/live.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/live.js",
+					"lit-html/directives/guard": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/guard.js",
+					"lit-html/directives/guard.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/guard.js",
+					"lit-html/directives/repeat": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/repeat.js",
+					"lit-html/directives/repeat.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/repeat.js",
+					"lit-html/directives/style-map": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/style-map.js",
+					"lit-html/directives/style-map.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/style-map.js",
+					"lit-html/directives/class-map": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/class-map.js",
+					"lit-html/directives/class-map.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/class-map.js",
+					"lit-html/directives/cache.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/cache.js",
+					"lit-html/directives/cache": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/cache.js",
+					"lit-html/directives/until": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/until.js",
+					"lit-html/directives/until.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/until.js",
+					"lit-html/directives/unsafe-html": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/unsafe-html.js",
+					"lit-html/directives/unsafe-html.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/unsafe-html.js",
+					"lit-html/directives/if-defined": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/if-defined.js",
+					"lit-html/directives/if-defined.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/if-defined.js",
+					"lit-html/directives/unsafe-svg": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/unsafe-svg.js",
+					"lit-html/directives/unsafe-svg.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.1.0/directives/unsafe-svg.js",
+					"lit-html/is-server.js": "https://webstatic.bog.ge/cdn/@vendor/lit/3.2.1/node_modules/lit-html/is-server.js",
+					"pwa-helpers": "https://webstatic.bog.ge/cdn/@vendor/pwa-helpers/0.9.1/pwa-helpers.js",
+					"pwa-helpers/media-query": "https://webstatic.bog.ge/cdn/@vendor/pwa-helpers/0.9.1/media-query.js",
+					"pwa-helpers/media-query.js": "https://webstatic.bog.ge/cdn/@vendor/pwa-helpers/0.9.1/media-query.js",
+					"@bog-design-system/assets": "https://webstatic.bog.ge/cdn/@bog-design-system/assets/0.26.4/index.js",
+					"@bog-design-system/bd-accordion": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-accordion/0.2.8/index.js",
+					"@bog-design-system/bd-account-selector": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-account-selector/0.5.9/index.js",
+					"@bog-design-system/bd-account-switcher": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-account-switcher/0.8.13/index.js",
+					"@bog-design-system/bd-accounts-and-cards-widget": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-accounts-and-cards-widget/0.0.34/index.js",
+					"@bog-design-system/bd-action-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-action-button/0.5.7/index.js",
+					"@bog-design-system/bd-action-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-action-card/0.5.9/index.js",
+					"@bog-design-system/bd-action-item": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-action-item/0.4.2/index.js",
+					"@bog-design-system/bd-action-item-wrapper": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-action-item-wrapper/0.9.10/index.js",
+					"@bog-design-system/bd-ad-widget": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-ad-widget/0.2.15/index.js",
+					"@bog-design-system/bd-alert": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-alert/0.2.14/index.js",
+					"@bog-design-system/bd-amount": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-amount/0.1.7/index.js",
+					"@bog-design-system/bd-amount-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-amount-badge/0.1.0/index.js",
+					"@bog-design-system/bd-amount-header": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-amount-header/0.2.4/index.js",
+					"@bog-design-system/bd-amount-switcher": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-amount-switcher/0.4.6/index.js",
+					"@bog-design-system/bd-app-header": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-app-header/0.7.42/index.js",
+					"@bog-design-system/bd-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-badge/0.0.23/index.js",
+					"@bog-design-system/bd-badge-overline": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-badge-overline/0.2.19/index.js",
+					"@bog-design-system/bd-banner": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-banner/0.0.25/index.js",
+					"@bog-design-system/bd-base-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-base-button/0.2.0/index.js",
+					"@bog-design-system/bd-blank-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-blank-input/0.6.7/index.js",
+					"@bog-design-system/bd-breadcrumbs": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-breadcrumbs/0.1.3/index.js",
+					"@bog-design-system/bd-breadcrumbs-v2": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-breadcrumbs-v2/0.1.45/index.js",
+					"@bog-design-system/bd-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-button/0.2.6/index.js",
+					"@bog-design-system/bd-calendar": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-calendar/0.6.5/index.js",
+					"@bog-design-system/bd-cards-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-cards-badge/0.0.9/index.js",
+					"@bog-design-system/bd-category-tabs": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-category-tabs/0.1.0/index.js",
+					"@bog-design-system/bd-checkbox": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-checkbox/0.3.0/index.js",
+					"@bog-design-system/bd-chips": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-chips/0.2.9/index.js",
+					"@bog-design-system/bd-cookie-consent": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-cookie-consent/0.7.2/index.js",
+					"@bog-design-system/bd-copy-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-copy-button/0.4.10/index.js",
+					"@bog-design-system/bd-currency-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-currency-badge/0.0.12/index.js",
+					"@bog-design-system/bd-currency-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-currency-card/0.10.5/index.js",
+					"@bog-design-system/bd-date": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-date/0.0.8/index.js",
+					"@bog-design-system/bd-datepicker": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-datepicker/0.6.2/index.js",
+					"@bog-design-system/bd-dialog": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-dialog/0.2.5/index.js",
+					"@bog-design-system/bd-drawer": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-drawer/0.3.5/index.js",
+					"@bog-design-system/bd-drill-down": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-drill-down/0.2.0/index.js",
+					"@bog-design-system/bd-dropdown": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-dropdown/0.5.1/index.js",
+					"@bog-design-system/bd-ecommerce-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-ecommerce-card/0.2.24/index.js",
+					"@bog-design-system/bd-exchange-rate-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-exchange-rate-card/0.3.23/index.js",
+					"@bog-design-system/bd-file-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-file-input/0.10.3/index.js",
+					"@bog-design-system/bd-filter-chips": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-filter-chips/0.8.5/index.js",
+					"@bog-design-system/bd-filter-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-filter-input/0.1.14/index.js",
+					"@bog-design-system/bd-filter-layout": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-filter-layout/0.2.20/index.js",
+					"@bog-design-system/bd-font": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-font/0.6.1/index.js",
+					"@bog-design-system/bd-footer-bottom": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-footer-bottom/0.1.5/index.js",
+					"@bog-design-system/bd-form-layout": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-form-layout/0.1.0/index.js",
+					"@bog-design-system/bd-form-selector": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-form-selector/0.1.0/index.js",
+					"@bog-design-system/bd-header": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-header/0.5.9/index.js",
+					"@bog-design-system/bd-header-dropdown": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-header-dropdown/0.3.12/index.js",
+					"@bog-design-system/bd-header-icon-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-header-icon-button/0.2.3/index.js",
+					"@bog-design-system/bd-icon": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-icon/0.6.0/index.js",
+					"@bog-design-system/bd-icon-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-icon-button/0.7.0/index.js",
+					"@bog-design-system/bd-infinite-scroll": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-infinite-scroll/0.2.0/index.js",
+					"@bog-design-system/bd-info-popover": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-info-popover/0.2.5/index.js",
+					"@bog-design-system/bd-language-selector": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-language-selector/0.2.36/index.js",
+					"@bog-design-system/bd-link": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-link/0.3.5/index.js",
+					"@bog-design-system/bd-linked-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-linked-card/0.2.6/index.js",
+					"@bog-design-system/bd-list-item": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-list-item/0.10.6/index.js",
+					"@bog-design-system/bd-loyalty-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-loyalty-card/0.2.27/index.js",
+					"@bog-design-system/bd-marketing-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-marketing-badge/0.0.13/index.js",
+					"@bog-design-system/bd-messages": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-messages/0.1.14/index.js",
+					"@bog-design-system/bd-mobile-scroll": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-mobile-scroll/0.2.2/index.js",
+					"@bog-design-system/bd-modal": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-modal/2.2.0/index.js",
+					"@bog-design-system/bd-navigation": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-navigation/0.10.7/index.js",
+					"@bog-design-system/bd-new-ecommerce-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-new-ecommerce-card/0.0.8/index.js",
+					"@bog-design-system/bd-notification-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-notification-badge/0.2.0/index.js",
+					"@bog-design-system/bd-offer-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-offer-card/0.2.6/index.js",
+					"@bog-design-system/bd-onboarding-tooltip": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-onboarding-tooltip/0.7.20/index.js",
+					"@bog-design-system/bd-otp-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-otp-input/0.2.16/index.js",
+					"@bog-design-system/bd-package-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-package-card/0.2.15/index.js",
+					"@bog-design-system/bd-page-wizard": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-page-wizard/0.0.48/index.js",
+					"@bog-design-system/bd-pagination": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-pagination/0.4.5/index.js",
+					"@bog-design-system/bd-payment-footer": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-payment-footer/0.0.7/index.js",
+					"@bog-design-system/bd-personal-banker-widget": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-personal-banker-widget/0.2.27/index.js",
+					"@bog-design-system/bd-point": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-point/0.1.16/index.js",
+					"@bog-design-system/bd-product-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-card/0.2.1/index.js",
+					"@bog-design-system/bd-product-filters": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-filters/0.1.43/index.js",
+					"@bog-design-system/bd-product-header": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-header/0.3.3/index.js",
+					"@bog-design-system/bd-product-item": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-item/0.4.6/index.js",
+					"@bog-design-system/bd-product-item-selector": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-item-selector/0.1.18/index.js",
+					"@bog-design-system/bd-product-switcher": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-switcher/0.4.23/index.js",
+					"@bog-design-system/bd-progress-bar": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-progress-bar/0.0.9/index.js",
+					"@bog-design-system/bd-radio-group": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-radio-group/0.2.10/index.js",
+					"@bog-design-system/bd-sca-new": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-sca-new/0.4.47/index.js",
+					"@bog-design-system/bd-scroll": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-scroll/0.4.1/index.js",
+					"@bog-design-system/bd-search-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-search-input/0.2.14/index.js",
+					"@bog-design-system/bd-select": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-select/0.9.6/index.js",
+					"@bog-design-system/bd-slider": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-slider/0.4.7/index.js",
+					"@bog-design-system/bd-slider-bullets": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-slider-bullets/0.1.0/index.js",
+					"@bog-design-system/bd-snackbar": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-snackbar/0.5.5/index.js",
+					"@bog-design-system/bd-space-description": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-space-description/0.3.1/index.js",
+					"@bog-design-system/bd-stack-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-stack-badge/0.0.7/index.js",
+					"@bog-design-system/bd-standard-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-standard-button/0.5.0/index.js",
+					"@bog-design-system/bd-stepper": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-stepper/0.2.1/index.js",
+					"@bog-design-system/bd-story-item": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-story-item/0.0.22/index.js",
+					"@bog-design-system/bd-summary": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-summary/0.0.23/index.js",
+					"@bog-design-system/bd-svg-loader": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-svg-loader/0.1.1/index.js",
+					"@bog-design-system/bd-system-badge": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-system-badge/2.7.2/index.js",
+					"@bog-design-system/bd-system-feedback": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-system-feedback/1.4.2/index.js",
+					"@bog-design-system/bd-table": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-table/0.1.11/index.js",
+					"@bog-design-system/bd-tabs": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-tabs/0.3.5/index.js",
+					"@bog-design-system/bd-text": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-text/0.1.1/index.js",
+					"@bog-design-system/bd-text-field": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-text-field/0.5.10/index.js",
+					"@bog-design-system/bd-text-field-area": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-text-field-area/0.2.0/index.js",
+					"@bog-design-system/bd-toggle": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-toggle/0.3.1/index.js",
+					"@bog-design-system/bd-tooltip": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-tooltip/0.8.0/index.js",
+					"@bog-design-system/bd-update-note": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-update-note/0.7.5/index.js",
+					"@bog-design-system/bd-view-switcher": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-view-switcher/0.1.4/index.js",
+					"@bog-design-system/bd-widget": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-widget/0.3.15/index.js",
+					"@bog-design-system/bd-wizard": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-wizard/0.3.1/index.js",
+					"@bog-design-system/utils": "https://webstatic.bog.ge/cdn/@bog-design-system/utils/0.1.0/index.js",
+					"@bog-design-system/bd-placeholder": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-placeholder/0.6.8/index.js",
+					"@bog-design-system/behavior": "https://webstatic.bog.ge/cdn/@bog-design-system/behavior/0.1.0/index.js",
+					"@bog-design-system/bd-notification-banner": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-notification-banner/0.9.1/index.js",
+					"@bog-design-system/bd-blank-textarea": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-blank-textarea/0.3.0/index.js",
+					"@bog-design-system/bd-account-action": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-account-action/0.12.15/index.js",
+					"@bog-design-system/bd-assist-chips": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-assist-chips/0.4.9/index.js",
+					"@bog-design-system/bd-avatar": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-avatar/0.0.19/index.js",
+					"@bog-design-system/bd-theme-placeholder": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-theme-placeholder/0.3.0/index.js",
+					"@bog-design-system/bd-router": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-router/0.1.0/index.js",
+					"@bog-design-system/bd-pusher": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-pusher/0.1.0/index.js",
+					"@bog-design-system/bd-combo-box": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-combo-box/0.1.41/index.js",
+					"@bog-design-system/bd-asset-button": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-asset-button/0.3.0/index.js",
+					"@bog-design-system/bd-blog-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-blog-card/0.1.6/index.js",
+					"@bog-design-system/bd-chat-message": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-chat-message/0.5.1/index.js",
+					"@bog-design-system/bd-dropdown-item": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-dropdown-item/0.1.0/index.js",
+					"@bog-design-system/bd-edit-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-edit-input/0.1.21/index.js",
+					"@bog-design-system/bd-hero-banner": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-hero-banner/0.0.7/index.js",
+					"@bog-design-system/bd-icon-tab": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-icon-tab/0.2.24/index.js",
+					"@bog-design-system/bd-inline-offer": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-inline-offer/0.2.1/index.js",
+					"@bog-design-system/bd-input-payment": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-input-payment/0.4.2/index.js",
+					"@bog-design-system/bd-input-range": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-input-range/0.2.10/index.js",
+					"@bog-design-system/bd-input-range-slider": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-input-range-slider/0.3.19/index.js",
+					"@bog-design-system/bd-input-rules": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-input-rules/0.0.7/index.js",
+					"@bog-design-system/bd-item-counter": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-item-counter/0.2.11/index.js",
+					"@bog-design-system/bd-linked-cards-slider": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-linked-cards-slider/0.0.24/index.js",
+					"@bog-design-system/bd-loader": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-loader/0.2.0/index.js",
+					"@bog-design-system/bd-nested-accordion": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-nested-accordion/0.2.4/index.js",
+					"@bog-design-system/bd-notification": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-notification/0.3.11/index.js",
+					"@bog-design-system/bd-numbers-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-numbers-card/0.2.22/index.js",
+					"@bog-design-system/bd-offer-card-slider": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-offer-card-slider/0.1.11/index.js",
+					"@bog-design-system/bd-phone-input": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-phone-input/0.2.39/index.js",
+					"@bog-design-system/bd-product-promo-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-product-promo-card/0.1.6/index.js",
+					"@bog-design-system/bd-progress-tracker": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-progress-tracker/0.2.27/index.js",
+					"@bog-design-system/bd-sca": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-sca/0.3.46/index.js",
+					"@bog-design-system/bd-section-template": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-section-template/0.0.8/index.js",
+					"@bog-design-system/bd-select-box": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-select-box/0.3.15/index.js",
+					"@bog-design-system/bd-sidebar": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-sidebar/0.0.35/index.js",
+					"@bog-design-system/bd-stars": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-stars/0.2.4/index.js",
+					"@bog-design-system/bd-story-modal": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-story-modal/0.3.5/index.js",
+					"@bog-design-system/bd-textarea": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-textarea/0.3.0/index.js",
+					"@bog-design-system/bd-timer": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-timer/0.1.4/index.js",
+					"@bog-design-system/bd-upcoming-payment": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-upcoming-payment/0.1.35/index.js",
+					"@bog-design-system/bd-video-player": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-video-player/0.2.0/index.js",
+					"@bog-design-system/bd-major-card": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-major-card/0.4.0/index.js",
+					"@bog-design-system/bd-section-tracker": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-section-tracker/0.2.10/index.js",
+					"@bog-design-system/bd-segmented-control": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-segmented-control/0.2.5/index.js",
+					"@bog-design-system/bd-announcement-banner": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-announcement-banner/0.1.2/index.js",
+					"@bog-design-system/deprecated-bd-input": "https://webstatic.bog.ge/cdn/@bog-design-system/deprecated-bd-input/0.4.18/index.js",
+					"@bog-design-system/bd-lottie-player": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-lottie-player/0.2.0/index.js",
+					"@bog-design-system/bd-input-chips": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-input-chips/0.2.9/index.js",
+					"@lottiefiles/lottie-player": "https://webstatic.bog.ge/cdn/@vendor/@lottiefiles/lottie-player/2.0.12/lottie-player.js",
+					"@bog-design-system/bd-feedback": "https://webstatic.bog.ge/cdn/@bog-design-system/bd-feedback/0.4.3/index.js"
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+		<div class="page">
+			<analytics-showcase-root></analytics-showcase-root>
+		</div>
+
+		<!--
+			Highcharts + dayjs as classic globals (single instance guaranteed, so dayjs plugins/locales
+			register correctly). Highcharts 11.4.8 matches the app's package.json. These run before the
+			deferred module below, so window.Highcharts / window.dayjs exist when showcase.js executes.
+		-->
+		<script src="https://code.highcharts.com/11.4.8/highcharts.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/dayjs.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/plugin/customParseFormat.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/locale/ka.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/locale/en.js"></script>
+		<script>
+			dayjs.extend(dayjs_plugin_customParseFormat);
+		</script>
+
+		<script type="module" src="./showcase.js"></script>
+	</body>
+</html>
