@@ -3,11 +3,11 @@
  *
  * Mirrors the real ads-manager offer-details page
  * (/ka/adsmanager-new/details/ads_manager/9981): offer header + info + tabs, and under the
- * Analytics tab the summary card with the learning / CTR-over-time / device charts, each
- * drilling into its own detail page.
+ * Analytics tab the summary card with the learning / CTR-over-time charts (each drilling into
+ * its own detail page) plus the audience drill-down section.
  *
  * Ports of the app components (campaign-section-analytics-new-view, campaign-learning-chart,
- * campaign-ctr-time-chart, campaign-user-by-device-chart, the two *-details views and
+ * campaign-ctr-time-chart, the two *-details views and
  * analytics-chart-wrapper): extends LitElement instead of DashElement, i18n keys -> the STRINGS
  * map, and the ads-manager/impressions/* API calls -> the local mockApi. Highcharts config and
  * styles are copied from the originals.
@@ -194,8 +194,15 @@ const STRINGS = {
         ctrCtr: "CTR %",
         ctrAxisValues: "Values",
 
-        deviceTitle: "მომხმარებლები მოწყობილობების მიხედვით",
-        deviceSubtitle: "როგორ განაწილდა უნიკალური მომხმარებლების რაოდენობა მოწყობილობების ჭრილში",
+        drilldownTitle: "დრილდაუნ",
+        drilldownSubtitle: "ავტომატური შეფასება აჩვენებს თქვენი შეთავაზების ეფექტიანობას",
+        ddMetricViews: "ნახვა",
+        ddMetricClicks: "კლიკი",
+        ddInterests: "ინტერესები",
+        ddIncome: "შემოსავლის მიხედვით",
+        ddGender: "სქესი",
+        ddRegion: "რეგიონი",
+        ddAge: "ასაკი",
 
         txAnalyticsTitle: "ტრანზაქციების ანალიტიკა",
         periodAll: "სულ",
@@ -338,8 +345,15 @@ const STRINGS = {
         ctrCtr: "CTR %",
         ctrAxisValues: "Values",
 
-        deviceTitle: "Users by device",
-        deviceSubtitle: "How the number of unique users is distributed across devices.",
+        drilldownTitle: "Drilldown",
+        drilldownSubtitle: "Automated assessment showing your offer's effectiveness.",
+        ddMetricViews: "Views",
+        ddMetricClicks: "Clicks",
+        ddInterests: "Interests",
+        ddIncome: "By income",
+        ddGender: "Gender",
+        ddRegion: "Region",
+        ddAge: "Age",
 
         txAnalyticsTitle: "Transactions analytics",
         periodAll: "All",
@@ -658,18 +672,6 @@ function route(url, params) {
         return empty
             ? {noData: true}
             : {result: {returnOnAdSpend: 0, conversionRate: 7, ctr: 5, uniqueCtr: 5.44, frequency: 1.14}};
-    }
-    if (url.includes("impressions/devices/chart")) {
-        return {
-            result: empty
-                ? {noData: true}
-                : {
-                      impressions: [
-                          {device: "android", impressions: 62},
-                          {device: "ios", impressions: 38},
-                      ],
-                  },
-        };
     }
     if (url.includes("impressions/views-prediction")) {
         if (empty) return {noData: true};
@@ -1412,32 +1414,92 @@ class ShowcaseCtrTimeChart extends LitElement {
 customElements.define("showcase-ctr-time-chart", ShowcaseCtrTimeChart);
 
 /* ================================================================== *
- *  <showcase-device-chart>  — port of campaign-user-by-device-chart
+ *  Drill-down section  — audience breakdown (interests / income /
+ *  gender / region / age). Replaces the users-by-device chart.
  * ================================================================== */
 
-const DEVICE_COLORS = {android: "#06a74c", ios: "#7938ea"};
+// Mock audience breakdown. Bar metrics carry ka/en labels; the donuts carry
+// their own segment colors. `value`/`y` are the "views" figures — the header
+// toggle scales the bar figures to "clicks".
+const DRILLDOWN = {
+    interests: [
+        {ka: "PLUS/MR ქულების აქტიური მომხმარებელი", en: "Active PLUS/MR points user", value: 383},
+        {ka: "შეთავაზებებით მოსარგებელი", en: "Offer user", value: 948},
+        {ka: "გურმანი", en: "Gourmet", value: 1654},
+        {ka: "ავტომობილის მფლობელი", en: "Car owner", value: 1493},
+        {ka: "შოპინგის მოყვარული", en: "Shopping enthusiast", value: 878},
+        {ka: "კულტურის მოყვარული", en: "Culture enthusiast", value: 1204},
+        {ka: "სპორტის გულშემატკივარი", en: "Sports fan", value: 1222},
+        {ka: "ვიდეო თამაშების მოყვარული", en: "Video game enthusiast", value: 407},
+        {ka: "ცხოველების მოყვარული", en: "Animal lover", value: 1359},
+        {ka: "ჯანსაღი ცხოვრების მიმდევარი", en: "Healthy lifestyle follower", value: 806},
+        {ka: "მოგზაური", en: "Traveler", value: 1504},
+        {ka: "ფოტოგრაფი", en: "Photographer", value: 718},
+        {ka: "გართობის მოყვარული", en: "Entertainment enthusiast", value: 1237},
+        {ka: "განათლებაზე ორიენტირებული", en: "Education-oriented", value: 552},
+        {ka: "მეოჯახე", en: "Family person", value: 1084},
+        {ka: "არ აქვს გამოკვეთილი ინტერესი", en: "No distinct interest", value: 1564},
+    ],
+    region: [
+        {ka: "თბილისი", en: "Tbilisi", value: 908},
+        {ka: "აფხაზეთი", en: "Abkhazia", value: 1024},
+        {ka: "სამეგრელო-ზემო სვანეთი", en: "Samegrelo-Zemo Svaneti", value: 1667},
+        {ka: "გურია", en: "Guria", value: 590},
+        {ka: "იმერეთი", en: "Imereti", value: 1477},
+        {ka: "აჭარა", en: "Adjara", value: 1807},
+        {ka: "სამცხე-ჯავახეთი", en: "Samtskhe-Javakheti", value: 1427},
+        {ka: "შიდა ქართლი", en: "Shida Kartli", value: 1885},
+        {ka: "ქვემო ქართლი", en: "Kvemo Kartli", value: 1703},
+        {ka: "მცხეთა-მთიანეთი", en: "Mtskheta-Mtianeti", value: 999},
+        {ka: "კახეთი", en: "Kakheti", value: 1503},
+        {ka: "რაჭა-ლეჩხუმი", en: "Racha-Lechkhumi", value: 450},
+        {ka: "NA", en: "NA", value: 1573},
+    ],
+    age: [
+        {ka: "6-18", en: "6-18", value: 3108},
+        {ka: "18-25", en: "18-25", value: 3282},
+        {ka: "25-35", en: "25-35", value: 1795},
+        {ka: "35-45", en: "35-45", value: 1388},
+        {ka: "45-55", en: "45-55", value: 1420},
+        {ka: "55+", en: "55+", value: 3719},
+        {ka: "NA", en: "NA", value: 2301},
+    ],
+    // `y` is the slice proportion; `amount` is the static count shown on hover.
+    income: [
+        {label: "0-1000", y: 18, amount: 3060, color: "#06a74c"},
+        {label: "1000-3000", y: 16, amount: 2720, color: "#7938ea"},
+        {label: "3000-5000", y: 30, amount: 5100, color: "#ffbd23"},
+        {label: "5000+", y: 14, amount: 2380, color: "#ff600a"},
+        {label: "NA", y: 22, amount: 3740, color: "#3fa9f5"},
+    ],
+    gender: [
+        {ka: "მამაკაცი", en: "Male", y: 68, amount: 11560, color: "#f5c84c"},
+        {ka: "ქალი", en: "Female", y: 32, amount: 5440, color: "#06a74c"},
+    ],
+};
 
-class ShowcaseDeviceChart extends LitElement {
-    static properties = {
-        lang: {type: String},
-        emptyState: {type: Boolean},
-        loading: {type: Boolean, reflect: true},
-        view: {type: String},
-        chartData: {type: Array},
-    };
+/* ---- Donut used inside the drill-down cards ---- */
+
+class ShowcaseDrilldownDonut extends LitElement {
+    static properties = {data: {type: Array}};
 
     static styles = [
         sharedChartStyles,
         css`
-            .chart-card {
+            .donut-card {
                 display: flex;
                 align-items: center;
-                gap: var(--space-32);
-                justify-content: center;
+                gap: var(--space-24);
+                justify-content: flex-start;
             }
-            .chart-wrapper {
-                width: 280px;
-                height: 280px;
+            #donut {
+                width: 150px;
+                height: 150px;
+                flex: none;
+            }
+            .legend {
+                padding: 0;
+                gap: var(--space-8);
             }
             .legend-text {
                 color: var(--text-secondary);
@@ -1447,102 +1509,289 @@ class ShowcaseDeviceChart extends LitElement {
 
     constructor() {
         super();
+        this.data = [];
+        this._sig = "";
+    }
+
+    updated(changed) {
+        if (changed.has("data")) {
+            const sig = JSON.stringify(this.data);
+            if (sig !== this._sig) {
+                this._sig = sig;
+                this._initChart();
+            }
+        }
+    }
+
+    render() {
+        return html`<div class="donut-card">
+            <div id="donut"></div>
+            <div class="legend">
+                ${this.data.map(
+                    (d) =>
+                        html`<div class="legend-item">
+                            <span class="legend-point" style="background-color: ${d.color};"></span>
+                            <bd-font class="legend-text" type="small-text">${d.name}</bd-font>
+                        </div>`,
+                )}
+            </div>
+        </div>`;
+    }
+
+    _initChart() {
+        if (!this.data.length) return;
+        Highcharts.setOptions(light);
+        requestAnimationFrame(() => {
+            const container = this.shadowRoot.getElementById("donut");
+            if (!container) return;
+            if (this.chart && Object.keys(this.chart).length) this.chart.destroy();
+            this.chart = Highcharts.chart(container, {
+                chart: {type: "pie", backgroundColor: "rgba(255, 255, 255, 0)", spacing: [0, 0, 0, 0]},
+                title: {text: null},
+                subtitle: {text: null},
+                credits: {enabled: false},
+                tooltip: {
+                    useHTML: true,
+                    pointFormat: "<b>{point.amount}</b>",
+                    backgroundColor: "#000000C7",
+                    borderRadius: 4,
+                    style: {color: "#fff"},
+                },
+                legend: {enabled: false},
+                plotOptions: {
+                    series: {
+                        borderRadius: 8,
+                        borderWidth: 5,
+                        borderColor: getCssVariableColor("--layer-01"),
+                        dataLabels: {enabled: false},
+                    },
+                },
+                series: [{colorByPoint: true, innerSize: "68%", size: "100%", data: this.data}],
+                colors: COLORS,
+            });
+        });
+    }
+}
+customElements.define("showcase-drilldown-donut", ShowcaseDrilldownDonut);
+
+/* ---- Drill-down section: header + toggle + breakdown grid ---- */
+
+class ShowcaseDrilldownSection extends LitElement {
+    static properties = {
+        lang: {type: String},
+        emptyState: {type: Boolean},
+        metric: {type: String},
+    };
+
+    static styles = css`
+        :host {
+            display: block;
+        }
+        .dd-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--space-16);
+            padding-bottom: var(--space-24);
+            flex-wrap: wrap;
+        }
+        .dd-titles {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+        .dd-sub {
+            color: var(--text-secondary);
+        }
+        .dd-toggle {
+            display: flex;
+            gap: var(--space-4);
+            padding: var(--space-4);
+            background-color: var(--layer-02);
+            border-radius: var(--border-radius-12);
+            flex: none;
+        }
+        .dd-seg {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-family: "BOG";
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: var(--space-8) var(--space-16);
+            border-radius: var(--border-radius-8);
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .dd-seg.active {
+            background-color: var(--layer-01);
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+        .dd-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-24);
+            align-items: start;
+        }
+        .dd-col {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-24);
+        }
+        .metric-card {
+            border: 1px solid var(--border-03);
+            border-radius: var(--border-radius-12);
+            background-color: var(--layer-01);
+            padding: var(--space-16) var(--space-24) var(--space-24);
+            box-sizing: border-box;
+        }
+        .metric-title {
+            display: block;
+            color: var(--text-primary);
+            margin-bottom: var(--space-24);
+        }
+        .bars {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-16);
+        }
+        .bar-row {
+            display: grid;
+            grid-template-columns: 92px 1fr auto;
+            align-items: center;
+            gap: var(--space-12);
+        }
+        .bar-label {
+            color: var(--text-secondary);
+            line-height: 1.3;
+        }
+        .bar-track {
+            height: 8px;
+            border-radius: 999px;
+            background-color: rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        .bar-fill {
+            display: block;
+            height: 100%;
+            min-width: 6px;
+            border-radius: 999px;
+            background-color: #f5c84c;
+        }
+        .bar-value {
+            color: var(--text-primary);
+            font-weight: 600;
+            text-align: right;
+        }
+        @media (max-width: ${MEDIA_CHECKPOINTS.medium}px) {
+            .dd-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: ${MEDIA_CHECKPOINTS.xSmall}px) {
+            .dd-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    `;
+
+    constructor() {
+        super();
         this.lang = "ka";
         this.emptyState = false;
-        this.loading = true;
-        this.view = "";
-        this.chartData = [];
+        this.metric = "views";
     }
 
     get t() {
         return makeT(this.lang);
     }
 
-    updated(changed) {
-        if (changed.has("emptyState") || changed.has("lang")) this._fetchChartData();
-    }
-
     render() {
-        if (this.view === VIEWS.ERROR || this.view === VIEWS.EMPTY) {
-            return html`<showcase-empty .messageType=${this.view} .t=${this.t}></showcase-empty>`;
-        }
+        const t = this.t;
         return html`
-            ${this.loading
-                ? html`<div id="chart" class="chart-wrapper"></div>`
-                : html`<div class="chart-card">
-                      <div id="chart" class="chart-wrapper"></div>
-                      <div class="legend">
-                          ${this.chartData?.map(
-                              (d) =>
-                                  html`<div class="legend-item">
-                                      <span
-                                          class="legend-point"
-                                          style="background-color: ${d.y === 0
-                                              ? getCssVariableColor("--text-disabled")
-                                              : d.color};"
-                                      ></span>
-                                      <bd-font class="legend-text" type="small-text">${d.name}</bd-font>
-                                  </div>`,
-                          )}
+            <div class="dd-header">
+                <div class="dd-titles">
+                    <bd-font type="overline1">${t("drilldownTitle")}</bd-font>
+                    <bd-font class="dd-sub" type="small-text">${t("drilldownSubtitle")}</bd-font>
+                </div>
+                <div class="dd-toggle">
+                    <button
+                        class="dd-seg ${this.metric === "views" ? "active" : ""}"
+                        @click="${() => (this.metric = "views")}"
+                    >
+                        ${t("ddMetricViews")}
+                    </button>
+                    <button
+                        class="dd-seg ${this.metric === "clicks" ? "active" : ""}"
+                        @click="${() => (this.metric = "clicks")}"
+                    >
+                        ${t("ddMetricClicks")}
+                    </button>
+                </div>
+            </div>
+            ${this.emptyState
+                ? html`<showcase-empty .messageType=${VIEWS.EMPTY} .t=${t}></showcase-empty>`
+                : html`<div class="dd-grid">
+                      <div class="dd-col">${this._barCard(t("ddInterests"), DRILLDOWN.interests)}</div>
+                      <div class="dd-col">
+                          ${this._donutCard(t("ddIncome"), this._incomeData())}
+                          ${this._donutCard(t("ddGender"), this._genderData())}
+                      </div>
+                      <div class="dd-col">
+                          ${this._barCard(t("ddRegion"), DRILLDOWN.region)}
+                          ${this._barCard(t("ddAge"), DRILLDOWN.age)}
                       </div>
                   </div>`}
         `;
     }
 
-    async _fetchChartData() {
-        this.loading = true;
-        try {
-            const res = await mockApi.execute({
-                url: "ads-manager/impressions/devices/chart",
-                params: {empty: this.emptyState},
-            });
-            if (this.chart && Object.keys(this.chart).length) this.chart.destroy();
-            if (!res.json?.result?.impressions?.length || res.json?.result?.noData) {
-                this.view = VIEWS.EMPTY;
-                return;
-            }
-            this.chartData = res.json.result.impressions.map((item) => ({
-                name: item.device === "ios" ? "iOS" : item.device.charAt(0).toUpperCase() + item.device.slice(1),
-                y: Math.round(item.impressions * 100) / 100,
-                color: DEVICE_COLORS[item.device] || COLORS[0],
-            }));
-            this.view = VIEWS.SUCCESS;
-            this._initChart();
-        } catch (e) {
-            console.error(e);
-            this.view = VIEWS.ERROR;
-        }
+    _metricValue(base, i) {
+        if (this.metric !== "clicks") return base;
+        const ratio = 0.13 + (i % 5) * 0.02;
+        return Math.max(1, Math.round(base * ratio));
     }
 
-    _initChart() {
-        this.loading = false;
-        Highcharts.setOptions(light);
-        Highcharts.Legend.prototype.setItemEvents = function () {};
-        requestAnimationFrame(() => {
-            const container = this.shadowRoot.getElementById("chart");
-            if (!container) return;
-            this.chart = Highcharts.chart(container, {
-                chart: {type: "pie", backgroundColor: "rgba(255, 255, 255, 0)"},
-                title: {text: null},
-                subtitle: {text: null},
-                credits: {enabled: false},
-                tooltip: {pointFormat: "<b>{point.y}%</b>"},
-                legend: {enabled: false},
-                plotOptions: {
-                    series: {
-                        borderRadius: 10,
-                        borderWidth: 5,
-                        borderColor: "#fcfcfc",
-                        dataLabels: {enabled: false},
-                    },
-                },
-                series: [{colorByPoint: true, innerSize: "65%", size: "100%", data: this.chartData}],
-                colors: COLORS,
-            });
-        });
+    _barCard(title, items) {
+        const values = items.map((it, i) => this._metricValue(it.value, i));
+        const max = Math.max(...values, 1);
+        return html`<div class="metric-card">
+            <bd-font class="metric-title" type="overline1">${title}</bd-font>
+            <div class="bars">
+                ${items.map((it, i) => {
+                    const value = values[i];
+                    const pct = Math.max(4, Math.round((value / max) * 100));
+                    return html`<div class="bar-row">
+                        <bd-font class="bar-label" type="small-text">${this.lang === "ka" ? it.ka : it.en}</bd-font>
+                        <div class="bar-track"><span class="bar-fill" style="width: ${pct}%;"></span></div>
+                        <bd-font class="bar-value" type="button-text">${value}</bd-font>
+                    </div>`;
+                })}
+            </div>
+        </div>`;
+    }
+
+    _donutCard(title, data) {
+        return html`<div class="metric-card">
+            <bd-font class="metric-title" type="overline1">${title}</bd-font>
+            <showcase-drilldown-donut .data=${data}></showcase-drilldown-donut>
+        </div>`;
+    }
+
+    _incomeData() {
+        return DRILLDOWN.income.map((d) => ({name: d.label, y: d.y, amount: d.amount, color: d.color}));
+    }
+
+    _genderData() {
+        return DRILLDOWN.gender.map((d) => ({
+            name: this.lang === "ka" ? d.ka : d.en,
+            y: d.y,
+            amount: d.amount,
+            color: d.color,
+        }));
     }
 }
-customElements.define("showcase-device-chart", ShowcaseDeviceChart);
+customElements.define("showcase-drilldown-section", ShowcaseDrilldownSection);
 
 /* ================================================================== *
  *  <showcase-realization-chart>  — port of campaign-details-realization-chart
@@ -2487,6 +2736,9 @@ class ShowcaseAnalyticsSection extends LitElement {
         showcase-chart-wrapper {
             grid-column: span 6;
         }
+        .drilldown-section {
+            grid-column: 1 / -1;
+        }
         @media (max-width: ${MEDIA_CHECKPOINTS.small}px) {
             .offer-analytics-charts-wrapper {
                 display: flex;
@@ -2585,17 +2837,11 @@ class ShowcaseAnalyticsSection extends LitElement {
                     ></showcase-ctr-time-chart>
                 </showcase-chart-wrapper>
 
-                <showcase-chart-wrapper
-                    show-header
-                    header-title="${t("deviceTitle")}"
-                    header-content="${t("deviceSubtitle")}"
-                >
-                    <showcase-device-chart
-                        slot="chart"
-                        .lang="${this.lang}"
-                        .emptyState="${this.emptyState}"
-                    ></showcase-device-chart>
-                </showcase-chart-wrapper>
+                <showcase-drilldown-section
+                    class="drilldown-section"
+                    .lang="${this.lang}"
+                    .emptyState="${this.emptyState}"
+                ></showcase-drilldown-section>
             </div>
         `;
     }
